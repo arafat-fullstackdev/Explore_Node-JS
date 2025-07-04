@@ -1,40 +1,59 @@
 const http = require('http')
+const  path = require('path')
+const fs = require('fs')
 
-const data = [
-  {
-    "title": "Summer Solstice Celebration",
-    "body": "Join us for a vibrant celebration of the summer solstice! We'll have live music, delicious food, and fun activities for all ages.",
-    "date": "2025-06-20"
-  },
-  {
-    "title": "Local Farmers Market Grand Opening",
-    "body": "Discover fresh, locally sourced produce, artisanal goods, and handmade crafts at our grand opening. Support your local farmers and makers!",
-    "date": "2025-07-05"
-  },
-  {
-    "title": "Community Clean-Up Day",
-    "body": "Let's work together to make our neighborhood shine! Volunteers are needed to help pick up litter and beautify our parks. Supplies will be provided.",
-    "date": "2025-07-15"
-  }
-]
 
+const filepath = path.join(__dirname, './db/todo.json')
+
+//? All todos
 const server = http.createServer((req,res) =>{
-    console.log(req.url,res.method);
-    // res.end('Welcome to ToDo App');
-
     if(req.url === '/todos' && req.method==='GET'){
+      const data = fs.readFileSync(filepath, {encoding: 'utf-8'})
         //? set headers
         res.writeHead(202,{
             'content-type': 'application/json',
-            'email': 'nyc@yahoo.com'
+            
 
         }); 
-        // res.setHeader('content-type', 'text/plain')
-        // res.setHeader('email', 'nyt@yahoo.com')
-        // res.statusCode= 201;
-        res.end(JSON.stringify(data));
+      
+        res.end(data);
+
+        //? post todo
     }else if(req.url === '/todos/create-todo' && req.method==='POST'){
-       res.end('Create ToDO');
+      let data = '';
+      req.on('data', (chunk)=>{
+        data +=chunk;
+      })
+     
+
+      req.on('end', ()=>{
+        console.log(data)
+        const {title ,body} = JSON.parse(data)
+         console.log({title,body});
+
+         const createAt = new Date().toISOString();
+
+         const allTodos = fs.readFileSync(filepath, {encoding: 'utf-8'});
+         const parseAllTodos = JSON.parse(allTodos)
+         parseAllTodos.push({
+          title,
+          body,
+          createAt
+         })
+
+         fs.writeFileSync(filepath, JSON.stringify(parseAllTodos, null,2), {encoding: 'utf-8'});
+
+         res.end(JSON.stringify({
+          title,
+          body,
+          createAt
+         }, null,2))
+
+      })
+     
+      // const allTodos = JSON.parse(fs.readFileSync(filepath, {encoding: 'utf-8'}));
+
+      //  res.end(JSON.stringify(allTodos));
     }else{
         res.end('Route NOt found')
     }
